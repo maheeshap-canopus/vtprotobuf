@@ -25,12 +25,17 @@ func init() {
 	generator.RegisterFeature("unmarshal_unsafe", func(gen *generator.GeneratedFile) generator.FeatureGenerator {
 		return &unmarshal{GeneratedFile: gen, unsafe: true}
 	})
+
+	generator.RegisterFeature("unmarshal_foreach_unsafe", func(gen *generator.GeneratedFile) generator.FeatureGenerator {
+		return &unmarshal{GeneratedFile: gen, unsafe: true, foreach: true}
+	})
 }
 
 type unmarshal struct {
 	*generator.GeneratedFile
-	unsafe bool
-	once   bool
+	unsafe  bool
+	once    bool
+	foreach bool
 }
 
 var _ generator.FeatureGenerator = (*unmarshal)(nil)
@@ -46,6 +51,9 @@ func (p *unmarshal) GenerateFile(file *protogen.File) bool {
 
 func (p *unmarshal) methodUnmarshal() string {
 	if p.unsafe {
+		if p.foreach {
+			return "UnmarshalVTUnsafeForEach"
+		}
 		return "UnmarshalVTUnsafe"
 	}
 	return "UnmarshalVT"
@@ -53,6 +61,13 @@ func (p *unmarshal) methodUnmarshal() string {
 
 func (p *unmarshal) decodeMessage(varName, buf string, message *protogen.Message) {
 	switch {
+	case p.foreach:
+		tmpP := *p
+		tmpP.foreach = false
+		p.P(`if err := `, varName, `.`, tmpP.methodUnmarshal(), `(`, buf, `); err != nil {`)
+		p.P(`return err`)
+		p.P(`}`)
+
 	case p.IsWellKnownType(message):
 		p.P(`if err := (*`, p.WellKnownTypeMap(message), `)(`, varName, `).`, p.methodUnmarshal(), `(`, buf, `); err != nil {`)
 		p.P(`return err`)
@@ -538,12 +553,21 @@ func (p *unmarshal) fieldItem(field *protogen.Field, fieldname string, message *
 				p.P(`m.`, fieldname, `[len(m.`, fieldname, `) - 1] = &`, field.Message.GoIdent, `{}`)
 				p.P(`}`)
 				p.P(`}`)
+				varname := fmt.Sprintf("m.%s[len(m.%s) - 1]", fieldname, fieldname)
+				buf := `dAtA[iNdEx:postIndex]`
+				p.decodeMessage(varname, buf, field.Message)
+			} else if p.foreach {
+				varname := "eAcH"
+				p.P(varname, ` := `, p.deepInit(field.Message, 2))
+				buf := `dAtA[iNdEx:postIndex]`
+				p.decodeMessage(varname, buf, field.Message)
+				p.P(`fOrEaCh(eAcH)`)
 			} else {
 				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, &`, field.Message.GoIdent, `{})`)
+				varname := fmt.Sprintf("m.%s[len(m.%s) - 1]", fieldname, fieldname)
+				buf := `dAtA[iNdEx:postIndex]`
+				p.decodeMessage(varname, buf, field.Message)
 			}
-			varname := fmt.Sprintf("m.%s[len(m.%s) - 1]", fieldname, fieldname)
-			buf := `dAtA[iNdEx:postIndex]`
-			p.decodeMessage(varname, buf, field.Message)
 		} else {
 			p.P(`if m.`, fieldname, ` == nil {`)
 			if p.ShouldPool(message) && p.ShouldPool(field.Message) {
@@ -695,6 +719,21 @@ func (p *unmarshal) fieldItem(field *protogen.Field, fieldname string, message *
 	}
 }
 
+func (p *unmarshal) deepInit(m *protogen.Message, maxDepth int) (out string) {
+	out = fmt.Sprintf("&%s{\n", p.QualifiedGoIdent(m.GoIdent))
+	if maxDepth > 0 {
+		for _, field := range m.Fields {
+			if field.Desc.Kind() == protoreflect.MessageKind {
+				if field.Message != m {
+					out += fmt.Sprintf("%s: %s,\n", field.GoName, p.deepInit(field.Message, maxDepth-1))
+				}
+			}
+		}
+	}
+	out += "}"
+	return out
+}
+
 func (p *unmarshal) field(proto3, oneof bool, field *protogen.Field, message *protogen.Message, required protoreflect.FieldNumbers) {
 	fieldname := field.GoName
 	errFieldname := fieldname
@@ -785,11 +824,31 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 		return
 	}
 
+	if p.foreach {
+		// Check that the message only has a single repeated field
+		if len(message.Fields) != 1 {
+			return
+		}
+		if !message.Fields[0].Desc.IsList() {
+			return
+		}
+		if message.Fields[0].Desc.Kind() != protoreflect.MessageKind {
+			return
+		}
+		if message.Fields[0].Message.Desc.Oneofs().Len() != 0 {
+			return
+		}
+	}
+
 	p.once = true
 	ccTypeName := message.GoIdent.GoName
 	required := message.Desc.RequiredNumbers()
 
-	p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte) error {`)
+	if p.foreach {
+		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte, fOrEaCh func(eAcH *`, message.Fields[0].Message.GoIdent, `)) error {`)
+	} else {
+		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte) error {`)
+	}
 	if required.Len() > 0 {
 		p.P(`var hasFields [`, strconv.Itoa(1+(required.Len()-1)/64), `]uint64`)
 	}

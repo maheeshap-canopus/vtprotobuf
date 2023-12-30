@@ -27,11 +27,26 @@ message UnsafeTest {
         map<string, string> foo = 1;
     }
 
+    message Sub6 {
+        repeated Sub7 subs = 1;
+    }
+
+    message Sub7 {
+        string s = 1;
+        Sub8 q = 2;
+    }
+
+    message Sub8 {
+        string s = 1;
+        string q = 2;
+    }
+
     oneof sub {
         Sub1 sub1 = 1;
         Sub2 sub2 = 2;
         Sub3 sub3 = 3;
         Sub4 sub4 = 4;
         Sub5 sub5 = 5;
+        Sub6 sub6 = 6;
     }
 }
