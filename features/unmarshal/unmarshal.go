@@ -723,10 +723,9 @@ func (p *unmarshal) deepInit(m *protogen.Message, maxDepth int) (out string) {
 	out = fmt.Sprintf("&%s{\n", p.QualifiedGoIdent(m.GoIdent))
 	if maxDepth > 0 {
 		for _, field := range m.Fields {
-			if field.Desc.Kind() == protoreflect.MessageKind {
-				if field.Message != m {
-					out += fmt.Sprintf("%s: %s,\n", field.GoName, p.deepInit(field.Message, maxDepth-1))
-				}
+			if field.Desc.Kind() == protoreflect.MessageKind &&
+				!field.Desc.IsList() && !field.Desc.IsMap() {
+				out += fmt.Sprintf("%s: %s,\n", field.GoName, p.deepInit(field.Message, maxDepth-1))
 			}
 		}
 	}
