@@ -558,10 +558,10 @@ func (p *unmarshal) fieldItem(field *protogen.Field, fieldname string, message *
 				p.decodeMessage(varname, buf, field.Message)
 			} else if p.foreach {
 				varname := "eAcH"
-				p.P(varname, ` := `, p.deepInit(field.Message, 2))
 				buf := `dAtA[iNdEx:postIndex]`
 				p.decodeMessage(varname, buf, field.Message)
 				p.P(`fOrEaCh(eAcH)`)
+				// TODO reset the message
 			} else {
 				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, &`, field.Message.GoIdent, `{})`)
 				varname := fmt.Sprintf("m.%s[len(m.%s) - 1]", fieldname, fieldname)
@@ -850,6 +850,9 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 	}
 	if required.Len() > 0 {
 		p.P(`var hasFields [`, strconv.Itoa(1+(required.Len()-1)/64), `]uint64`)
+	}
+	if p.foreach {
+		p.P(`eAcH := `, p.deepInit(message.Fields[0].Message, 2))
 	}
 	p.P(`l := len(dAtA)`)
 	p.P(`iNdEx := 0`)
