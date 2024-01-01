@@ -844,15 +844,12 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 	required := message.Desc.RequiredNumbers()
 
 	if p.foreach {
-		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte, fOrEaCh func(eAcH *`, message.Fields[0].Message.GoIdent, `)) error {`)
+		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte, eAcH *`, message.Fields[0].Message.GoIdent, `, fOrEaCh func(eAcH *`, message.Fields[0].Message.GoIdent, `)) error {`)
 	} else {
 		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte) error {`)
 	}
 	if required.Len() > 0 {
 		p.P(`var hasFields [`, strconv.Itoa(1+(required.Len()-1)/64), `]uint64`)
-	}
-	if p.foreach {
-		p.P(`eAcH := `, p.deepInit(message.Fields[0].Message, 2))
 	}
 	p.P(`l := len(dAtA)`)
 	p.P(`iNdEx := 0`)

@@ -6,12 +6,11 @@ package unsafe
 
 import (
 	fmt "fmt"
-	io "io"
-	unsafe "unsafe"
-
 	protohelpers "github.com/maheeshap-canopus/vtprotobuf/protohelpers"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	io "io"
+	unsafe "unsafe"
 )
 
 const (
@@ -3467,10 +3466,7 @@ func (m *UnsafeTest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnsafeTest_Sub6) UnmarshalVTUnsafeForEach(dAtA []byte, fOrEaCh func(eAcH *UnsafeTest_Sub7)) error {
-	eAcH := &UnsafeTest_Sub7{
-		Q: &UnsafeTest_Sub8{},
-	}
+func (m *UnsafeTest_Sub6) UnmarshalVTUnsafeForEach(dAtA []byte, eAcH *UnsafeTest_Sub7, fOrEaCh func(eAcH *UnsafeTest_Sub7)) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
