@@ -4424,7 +4424,13 @@ func (m *UnsafeTest_Sub7) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.S = unsafe.String(&dAtA[iNdEx], intStringLen)
+			var stringValue string
+			if intStringLen == 0 {
+				stringValue = unsafe.String(nil, intStringLen)
+			} else {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.S = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -4543,7 +4549,13 @@ func (m *UnsafeTest_Sub8) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.S = unsafe.String(&dAtA[iNdEx], intStringLen)
+			var stringValue string
+			if intStringLen == 0 {
+				stringValue = unsafe.String(nil, intStringLen)
+			} else {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.S = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -4575,7 +4587,13 @@ func (m *UnsafeTest_Sub8) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Q = unsafe.String(&dAtA[iNdEx], intStringLen)
+			var stringValue string
+			if intStringLen == 0 {
+				stringValue = unsafe.String(nil, intStringLen)
+			} else {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Q = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

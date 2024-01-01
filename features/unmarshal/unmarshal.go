@@ -824,10 +824,10 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 	}
 
 	if p.foreach {
-		// Check that the message only has a single repeated field
-		if len(message.Fields) != 1 {
+		if len(message.Fields) == 0 {
 			return
 		}
+		// Check that the messages first field is a repeated message type
 		if !message.Fields[0].Desc.IsList() {
 			return
 		}
@@ -836,6 +836,18 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 		}
 		if message.Fields[0].Message.Desc.Oneofs().Len() != 0 {
 			return
+		}
+		if len(message.Fields) > 1 {
+			// For any remaining fields
+			for i := 1; i < len(message.Fields); i++ {
+				f := message.Fields[i]
+				if f.Oneof != nil { // Don't allow oneofs since they change the marshalling order
+					return
+				}
+				if f.Desc.IsList() { // Don't allow any other list fields
+					return
+				}
+			}
 		}
 	}
 
