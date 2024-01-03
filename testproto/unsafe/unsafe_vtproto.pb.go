@@ -3466,7 +3466,7 @@ func (m *UnsafeTest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *UnsafeTest_Sub6) UnmarshalVTUnsafeForEach(dAtA []byte, eAcH *UnsafeTest_Sub7, fOrEaCh func(eAcH *UnsafeTest_Sub7)) error {
+func (m *UnsafeTest_Sub6) UnmarshalVTUnsafeForEach(dAtA []byte, eAcH *UnsafeTest_Sub7, fOrEaCh func()) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3527,7 +3527,7 @@ func (m *UnsafeTest_Sub6) UnmarshalVTUnsafeForEach(dAtA []byte, eAcH *UnsafeTest
 			if err := eAcH.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
-			fOrEaCh(eAcH)
+			fOrEaCh()
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

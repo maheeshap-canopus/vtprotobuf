@@ -560,8 +560,7 @@ func (p *unmarshal) fieldItem(field *protogen.Field, fieldname string, message *
 				varname := "eAcH"
 				buf := `dAtA[iNdEx:postIndex]`
 				p.decodeMessage(varname, buf, field.Message)
-				p.P(`fOrEaCh(eAcH)`)
-				// TODO reset the message
+				p.P(`fOrEaCh()`)
 			} else {
 				p.P(`m.`, fieldname, ` = append(m.`, fieldname, `, &`, field.Message.GoIdent, `{})`)
 				varname := fmt.Sprintf("m.%s[len(m.%s) - 1]", fieldname, fieldname)
@@ -827,19 +826,20 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 		if len(message.Fields) == 0 {
 			return
 		}
-		// Check that the messages first field is a repeated message type
-		if !message.Fields[0].Desc.IsList() {
+		// Check that the messages last field is a repeated message type
+		lastField := message.Fields[len(message.Fields)-1]
+		if !lastField.Desc.IsList() {
 			return
 		}
-		if message.Fields[0].Desc.Kind() != protoreflect.MessageKind {
+		if lastField.Desc.Kind() != protoreflect.MessageKind {
 			return
 		}
-		if message.Fields[0].Message.Desc.Oneofs().Len() != 0 {
+		if lastField.Message.Desc.Oneofs().Len() != 0 {
 			return
 		}
 		if len(message.Fields) > 1 {
 			// For any remaining fields
-			for i := 1; i < len(message.Fields); i++ {
+			for i := 0; i < len(message.Fields)-1; i++ {
 				f := message.Fields[i]
 				if f.Oneof != nil { // Don't allow oneofs since they change the marshalling order
 					return
@@ -856,7 +856,8 @@ func (p *unmarshal) message(proto3 bool, message *protogen.Message) {
 	required := message.Desc.RequiredNumbers()
 
 	if p.foreach {
-		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte, eAcH *`, message.Fields[0].Message.GoIdent, `, fOrEaCh func(eAcH *`, message.Fields[0].Message.GoIdent, `)) error {`)
+		lastFieldType := message.Fields[len(message.Fields)-1].Message.GoIdent
+		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte, eAcH *`, lastFieldType, `, fOrEaCh func()) error {`)
 	} else {
 		p.P(`func (m *`, ccTypeName, `) `, p.methodUnmarshal(), `(dAtA []byte) error {`)
 	}
